@@ -282,12 +282,12 @@ function Invoke-HandBrakeQueue {
     $HandBrakePath = Get-HandBrakePath -Candidate $HandBrakePath
     Write-Host "Using HandBrakeCLI at: $HandBrakePath" -ForegroundColor Cyan
 
-    $queue = Load-Queue -CsvPath $CsvPath
+    $queue = Import-Queue -CsvPath $CsvPath
     $total = $queue.Count
     Write-Host "`nQueue contains $total entries." -ForegroundColor Yellow
 
     $statusFile = Join-Path $PSScriptRoot 'HandBrakeStatus.json'
-    $status = Load-Status -StatusFile $statusFile
+    $status = Import-Status -StatusFile $statusFile
 
     $completed = $status.Completed
     $failed    = $status.Failed

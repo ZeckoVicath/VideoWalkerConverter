@@ -334,7 +334,7 @@ function Build-Tree {
 # Build the HandBrake re-encode queue from the scanned tree.
 # Only files with a detected video stream are considered; H.265/AV1 are skipped.
 # -----------------------------------------------------------------------------
-function    Group-FileQueue {
+function Group-FileQueue {
     param([pscustomobject] $Node)
     foreach ($file in $Node.Files) {
         $displayCodec = if ($file.VideoCodec) { $file.VideoCodec } else { '<no codec>' }
@@ -408,12 +408,12 @@ $tree = Build-Tree -Root $rootResolved -MaxDepth $MaxDepth
 
 try { $tree | ConvertTo-Json -Depth 99 | Set-Content -Path $JsonOut -Encoding UTF8; Write-Host "`n✅ JSON written to $JsonOut" -ForegroundColor Green } catch { Write-Warning "Failed to write JSON: ${_}" }
 
-Collect-Queue -Node $tree
+Group-FileQueue -Node $tree
 try { $csvRows | Export-Csv -Path $CsvOut -NoTypeInformation -Encoding UTF8; Write-Host "`n✅ CSV written to $CsvOut ($($csvRows.Count) rows)" -ForegroundColor Green } catch { Write-Warning "Failed to write CSV: ${_}" }
 
 $folderCount = ($ProcessedFolders | Measure-Object).Count
-$fileCount = Count-Files -Node $tree
-$videoCount = Count-VideoFiles -Node $tree
+$fileCount = Measure-TreeFilesCount -Node $tree
+$videoCount = Get-VideoFileCount -Node $tree
 
 Write-Host "`n=== Scan completed ===" -ForegroundColor Cyan
 Write-Host "Folders processed       : $folderCount"
