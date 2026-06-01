@@ -16,6 +16,11 @@
     • WARN (Review): Duration differences 0.1-5%, stream size variance up to 15%, etc.
     • MISMATCH (Fail): Duration/size near 0, >70% delta, missing audio/subtitles, etc.
 
+    OUTPUT:
+    • Displays detailed side-by-side comparison tables for each file pair
+    • Generates summary table for batch comparisons
+    • Exports ComparisonResult.csv with results for downstream processing (cleanup scripts, etc.)
+
     Properties compared:
     - Container format and file extension
     - Video codec, resolution, duration, frame rate, stream size
@@ -837,6 +842,37 @@ try {
         Write-Host " | " -ForegroundColor Cyan -NoNewline
         Write-Host "$failCount failed" -ForegroundColor Red
         Write-Host ""
+    }
+
+    # Export comparison results to CSV for downstream processing (e.g., cleanup script)
+    if ($summaryResults.Count -gt 0) {
+        $csvPath = Join-Path $PSScriptRoot 'ComparisonResult.csv'
+        
+        # Build CSV rows with file paths and verdict information
+        $csvRows = @()
+        $comparisonItemIndex = 0
+        
+        foreach ($result in $summaryResults) {
+            $item = $comparisonItems[$comparisonItemIndex]
+            $csvRows += [PSCustomObject]@{
+                BackupFile = $item.File1
+                OutputFile = $item.File2
+                Verdict = $result.Verdict
+                Status = if ($result.MismatchCount -eq 0) { "PASSED" } else { "FAILED" }
+                MismatchCount = $result.MismatchCount
+                WarningCount = $result.WarningCount
+                InfoCount = $result.InfoCount
+            }
+            $comparisonItemIndex++
+        }
+        
+        try {
+            $csvRows | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8 -Force
+            Write-Host "✅ Comparison results exported to: $csvPath" -ForegroundColor Green
+        }
+        catch {
+            Write-Warning "Failed to export comparison results to CSV: $_"
+        }
     }
 
     # Set final exit code
